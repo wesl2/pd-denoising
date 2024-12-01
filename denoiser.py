@@ -16,7 +16,7 @@ limit_set = [[0,75], [0, 80]]
 
 def segy_normalize(seismic_noise):
     seismic_noise_max = abs(seismic_noise).max()  # 获取数据最大幅值
-    seismic_noise = seismic_noise / seismic_noise_max  # 将数据归一化到(-1,1
+    seismic_noise = seismic_noise / seismic_noise_max  # 将数据归一化到(-1,1)
     return seismic_noise
 
 def img_normalize(data):
