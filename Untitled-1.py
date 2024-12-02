@@ -1,10 +1,13 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import cv2
+import os
 import torch
 import segyio
 import matplotlib.pyplot as plt
 import random
+from utils import *
+import argparse
 # # nl_list = np.zeros((1,3,1))
 # # print(nl_list)
 
@@ -110,20 +113,38 @@ if __name__ == "__main__":
     # cv2.imshow("tpic", tpic)
     # cv2.waitKey(0)
 
-    seismic_noise = read_segy_data('D:\\academic\\dncnn_pytorch\\data\\sgy_data\\synthetic.sgy')  # 野外地震数据        
-    seismic_block_h, seismic_block_w = seismic_noise.shape
+    # seismic_noise = read_segy_data('D:\\academic\\dncnn_pytorch\\data\\sgy_data\\synthetic.sgy')  # 野外地震数据        
+    # seismic_noise = seismic_noise[:, :,np.newaxis] 
+    # seismic_noise = np2ts(seismic_noise)
+    # print(seismic_noise.shape) 
+    # out_numpy = visual_va2np(seismic_noise, 0, 0, 1, 1, 1, 1501, 9030, 1)
 
-    x_ = 0.5
-    vmin, vmax = -x_, x_
 
-    fig, axes = plt.subplots(1, 2, figsize=(12, 6))
+    path_t = "D:\\academic\\PD-Denoising-pytorch\\results\\beijing"
+    iname = "OUT"+'.png'
+
+    # print(path_t)
+    # path_t = os.path.join(path_t,iname)
+    # #cv2.imwrite(path_t, merge_out[:,:,::-1])
+    # cv2.imwrite(path_t,out_numpy)
+
+    img1 = cv2.imread("D:\\academic\\PD-Denoising-pytorch\\results\\beijing\\atest_show.png")
+    img2 = cv2.imread("D:\\academic\\PD-Denoising-pytorch\\results\\beijing\\result.png")
+
+    iout = img1 - img2
+    print(iout.shape)
+    path_t = os.path.join(path_t,iname)
+    cv2.imwrite(path_t, iout)
+
+
+    #fig, axes = plt.subplots(1, 2, figsize=(12, 6))
     
     # 绘制噪声数据
-    axes[0].imshow(seismic_noise, cmap=plt.cm.seismic, aspect='auto', vmin=vmin, vmax=vmax)
-    axes[0].set_title('Noise Data')
-    axes[0].axis('off')  # 关闭坐标轴
-    plt.tight_layout()  # 自动调整子图位置
-    plt.show()
+    # axes[0].imshow(seismic_noise, cmap=plt.cm.seismic, aspect='auto', vmin=vmin, vmax=vmax)
+    # axes[0].set_title('Noise Data')
+    # axes[0].axis('off')  # 关闭坐标轴
+    # plt.tight_layout()  # 自动调整子图位置
+    # plt.show()
     # 数据归一化处理
     #seismic_noise_max = abs(seismic_noise).max()  # 获取数据最大幅值
     #seismic_noise = seismic_noise / seismic_noise_max  # 将数据归一化到(-1,1) 

@@ -12,7 +12,10 @@ from denoiser import *
 from PIL import Image
 import scipy.io as sio
 import segyio
+import matplotlib
+matplotlib.use('Qt5Agg') 
 import matplotlib.pyplot as plt
+
 import random
 
 parser = argparse.ArgumentParser(description="PD-denoising")
@@ -48,7 +51,7 @@ parser.add_argument("--keep_ind", nargs = "+", type=int, help='[0 1 2]Gaussian [
 #output options
 parser.add_argument("--output_map", type=int, default=0, help='whether to output maps')
 #K 可以交互式调整以平衡细节和背景，从而提供灵活的降噪性能。k=1 用于更多地关注平坦区域以获得非常平滑的结果，k=0 用于获得更多纹理细节（默认）
-parser.add_argument("--k", type=float, default=0.1, help='merging factor between details and background')
+parser.add_argument("--k", type=float, default=0, help='merging factor between details and background')
 parser.add_argument("--out_dir", type=str, default="D:\\academic\\PD-Denoising-pytorch\\results\\beijing\\", help='path of output files')
 
 opt = parser.parse_args()
@@ -74,9 +77,18 @@ def img_normalize(data):
 
 def main():
 
-    seismic_noise = read_segy_data('D:\\academic\\dncnn_pytorch\\data\\sgy_data\\synthetic.sgy')  # 野外地震数据        
+    #seismic_noise = read_segy_data('D:\\academic\\dncnn_pytorch\\data\\sgy_data\\synthetic.sgy')  # 野外地震数据        
+    
+    data_noise =  np.load('D:\\academic\\dncnn_pytorch\\data\\sgy_data\\noise\\noise8.npy' )
+    data_clean =  np.load('D:\\academic\\dncnn_pytorch\\data\\sgy_data\\clean\\clean8.npy' )
+    seismic_noise = data_noise
     seismic_block_h, seismic_block_w = seismic_noise.shape
     # 数据归一化处理
+    seismic_noise_max = abs(seismic_noise).max()  # 获取数据最大幅值
+    data_clean = data_clean / seismic_noise_max  # 将数据归一化到(-1,1)  
+    data_clean = data_clean[:, :,np.newaxis] 
+    data_clean = data_clean[:,:,0]
+
     seismic_noise_max = abs(seismic_noise).max()  # 获取数据最大幅值
     seismic_noise = seismic_noise / seismic_noise_max  # 将数据归一化到(-1,1)  
     seismic_noise = seismic_noise[:, :,np.newaxis] 
@@ -127,7 +139,7 @@ def main():
     # # image
     #Img = cv2.imread(f)  #input image with w*h*c
     Img = seismic_noise
-
+    w,h,_ = Img.shape
     pss=1
     if opt.ps == 1:
         #TODO:相对先改绝对 后面要看怎么改
@@ -148,7 +160,7 @@ def main():
         while j < h:
             j_end = min(j+wbin, h)
             patch = Img[i:i_end,j:j_end,:]
-            patch_merge_out_numpy = denoiser(patch, c, pss, model, model_est, opt)
+            patch_merge_out_numpy = denoiser(patch, 1, pss, model, model_est, opt)
             merge_out[i:i_end, j:j_end, :] = patch_merge_out_numpy        
             j = j_end
         i = i_end
@@ -157,16 +169,39 @@ def main():
     out_image = reverse_pixelshuffle(merge_out[:,:,::-1],pss)
     #cv2.imwrite(os.path.join("D:\\academic\\PD-Denoising-pytorch\\results_bc\\", file_name + '_pss'+str(pss)+'_k'+str(opt.k)+'.png'), merge_out[:,:,::-1])
     #path_t = os.path.join(opt.out_dir, file_name + '_pss'+str(pss)+'_k'+str(opt.k)+'.png')
-    path_t = "D:\\academic\\PD-Denoising-pytorch\\results\\beijing"
-    iname = "i = {}".format(t) + '_pss'+str(pss)+'_k'+str(opt.k)+'.png'
-    print(file_name)
-    print(path_t)
-    path_t = os.path.join(path_t,iname)
-    #cv2.imwrite(path_t, merge_out[:,:,::-1])
-    cv2.imwrite(path_t,out_image)
+    result  =  out_image[:,:,0]
+    print(out_image)
+    print("____________________________________________________________________")
+    print(result)
+    print(result.shape)
+    print(data_clean.shape)
+    fig1 = plt.figure()
+    # 三个参数分别为：行数，列数，
+    ax1 = fig1.add_subplot(1, 3, 1)
+    ax2 = fig1.add_subplot(1, 3, 2)
+    ax3 = fig1.add_subplot(1, 3, 3)
+    # 绘制曲线
+    ax1.imshow(data_noise, cmap=plt.cm.seismic, interpolation='nearest', aspect=1, vmin=-0.5, vmax=0.5)
+    ax2.imshow(out_image, cmap=plt.cm.seismic, interpolation='nearest', aspect=1, vmin=-0.5, vmax=0.5)
+    ax3.imshow(result - data_clean, cmap=plt.cm.seismic, interpolation='nearest', aspect=1, vmin=-0.5, vmax=0.5)
+    plt.tight_layout()  # 自动调整子图位置
+    plt.show()
+
+
+    
+    
+    
+    # path_t = "D:\\academic\\PD-Denoising-pytorch\\results\\beijing"
+    # iname = "i = {}".format(t) + '_pss'+str(pss)+'_k'+str(opt.k)+'.png'
+    # print(file_name)
+    # print(path_t)
+    # path_t = os.path.join(path_t,iname)
+    # #cv2.imwrite(path_t, merge_out[:,:,::-1])
+    # cv2.imwrite(path_t,out_image)
     print('done!')
 
 
 if __name__ == "__main__":
+ 
     torch.cuda.empty_cache()
     main()

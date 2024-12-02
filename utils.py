@@ -102,8 +102,8 @@ def data_augmentation(image, mode):
     return np.transpose(out, (2,0,1))
 
 
-#TODO: notice
-#用opencv读取图片 需要转置其格式从HWC到CHW
+
+#FIXME:选择图像或者是segy 当前：segy 不要乘以255
 def visual_va2np(Out, mode=1, ps=0, pss=1, scal=1, rescale=0, w=10, h=10, c=3, refill=0, refill_img=0, refill_ind=[0, 0]):
      # 根据 mode 的值处理输出张量，转换为 NumPy 数组
     if mode == 0 or mode == 1 or mode==3:
@@ -116,6 +116,7 @@ def visual_va2np(Out, mode=1, ps=0, pss=1, scal=1, rescale=0, w=10, h=10, c=3, r
     if mode == 0 or mode == 1:
         # 转置 NumPy 数组的维度（从 (C, H, W) 到 (H, W, C)），方便进行图像操作
         # 并将像素值放大到 255 范围（0-255），通过 scal 缩放系数调整
+        #FIXME:不应该是255
         out_numpy = (np.transpose(out_numpy, (1, 2, 0))) * 255.0 * scal
     else:
         out_numpy = (np.transpose(out_numpy, (1, 2, 0))) # 如果 mode 不为 0 或 1，则只进行维度转置，不进行放大
@@ -141,7 +142,7 @@ def temp_ps_4comb(Out, In):
 #HWC格式是指按照高度、宽度和通道数的顺序排列图像尺寸的格式。
 # 例如，一张形状为256×256×3的RGB图像，在HWC格式中表示为[256, 256, 3]。
 # 在一些图像处理库或者底层框架中，例如OpenCV和TensorFlow，通常使用HWC格式表示图像尺寸。
-#在OpenCV中，读取的图片默认是HWC格式，即按照高度、宽度和通道数的顺序排列图像尺寸的格式。
+#在OpenCV中，读取的图片默认是HWC格式，即按照高度、宽度和通道数  whc  的顺序排列图像尺寸的格式。
 # 例如，一张形状为256×256×3的RGB图像，在OpenCV中读取后的格式为[256, 256, 3]，其中最后一个维度表示图像的通道数。
 # 在OpenCV中，可以通过cv2.imread()函数读取图片，该函数的返回值是一个NumPy数组，表示读取的图像像素值。
 # 需要注意的是，OpenCV读取的图像像素值是按照BGR顺序排列的，而不是RGB顺序。
@@ -504,6 +505,7 @@ def level_refine(NM_tensor, ref_mode, chn=3):
 def normalize(a, len_v, min_v, max_v):
     '''
     normalize the sequence of factors
+    标准化噪声 
      归一化因子序列
     [输入] 
     a: 待归一化的数组或序列
@@ -615,6 +617,7 @@ def generate_noisy(image, noise_type, noise_level_list=0, sigma_s=20, sigma_c=40
             noisy_chn[ prob_map < noise_level_list[chn] ] = noise_map[ prob_map < noise_level_list[chn] ]
             #如果 prob_map 中某个位置的值小于当前通道的噪声水平 noise_level_list[chn]，
             # 则将该位置的像素替换为随机噪声图 noise_map 中对应位置的值。相当于做像素丢失。
+            noisy[:,:,chn] = noisy_chn
     elif noise_type == 2:
         pass #这个模型在代码中没有实现，但可以想象是将高斯噪声和泊松噪声结合的模型。高斯噪声是信号无关的，而泊松噪声则是信号相关的。
 
@@ -654,7 +657,7 @@ def generate_comp_noisy(image, noise_level_list):
         #TODO:怎么就可以通过这个获得混合比例？？？
         # 获取混合噪声的比例（`mix_thre`）和高斯噪声的标准差（`gau_std`）
         # 下面几行是我加的
-        print(noise_level_list)
+        #print(noise_level_list)
         
         #if noise_level_list != 0.0:
         mix_thre = noise_level_list[c+chn]#只有这行是原来的  #get the mix ratio of AWGN and RVIN 获取 AWGN 和 RVIN 的混合比例
